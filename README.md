@@ -10,7 +10,7 @@
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/atlas)
 
-[Live Demo](#) · [Report a Bug](https://github.com/Lahu19/panditji/issues) · [Request a Feature](https://github.com/Lahu19/panditji/issues) · [Contribute](#contributing)
+[Live Demo](https://find-mu-pandit.vercel.app/) · [Report a Bug](https://github.com/Lahu19/panditji/issues) · [Request a Feature](https://github.com/Lahu19/panditji/issues) · [Contribute](#contributing)
 
 </div>
 
