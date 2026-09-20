@@ -4,6 +4,8 @@ server/node_modules/
 
 # Environment — NEVER commit real secrets
 .env
+.env.production
+.env.local
 server/.env
 
 # Build output
