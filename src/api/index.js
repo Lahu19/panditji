@@ -1,0 +1,14 @@
+export { default as api }                    from './client.js';
+export { authApi }                           from './auth.js';
+export { categoriesApi }                     from './categories.js';
+export { servicesApi }                       from './services.js';
+export { providersApi }                      from './providers.js';
+export { serviceRequestsApi }                from './serviceRequests.js';
+export { bookingsApi }                       from './bookings.js';
+export { reviewsApi }                        from './reviews.js';
+export { matchesApi }                        from './matches.js';
+export { paymentsApi }                       from './payments.js';
+export { notificationsApi }                  from './notifications.js';
+export { conversationsApi }                  from './conversations.js';
+export { providerAvailabilityApi }           from './providerAvailability.js';
+export { askPanditjiAI, getPanditjiAIInfo }  from './ai.js';
