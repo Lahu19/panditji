@@ -3,12 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Menu, X, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import AuthModal from './AuthModal.jsx';
+import { LocationBadge, LocationSelectorModal } from './LocationSelector.jsx';
 
 export default function Navbar() {
-  const [scrolled,   setScrolled]   = useState(false);
-  const [menuOpen,   setMenuOpen]   = useState(false);
-  const [showAuth,   setShowAuth]   = useState(false);
-  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const { user, logout } = useAuth();
 
   useEffect(() => {
@@ -41,6 +41,9 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="desktop-nav">
+          {/* Location badge */}
+          <LocationBadge />
+
           <Link to="/browse"  className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>🛕 Browse</Link>
           <Link to="/pandits" className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>👤 Pandits</Link>
           <Link to="/search"  className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>
@@ -53,6 +56,22 @@ export default function Navbar() {
           {/* Auth area */}
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 4 }}>
+              {user.userType === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, padding: '7px 12px', color: 'var(--gold)', fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  ⚙️ Admin
+                </Link>
+              )}
+              {user.userType === 'PROVIDER' && (
+                <Link
+                  to="/pandit-portal"
+                  style={{ background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.4)', borderRadius: 8, padding: '7px 12px', color: 'var(--saffron)', fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  🙏 My Portal
+                </Link>
+              )}
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)' }}>
                 {user.profile?.displayName || user.profile?.firstName || 'Account'}
               </span>
@@ -87,10 +106,14 @@ export default function Navbar() {
         {/* Mobile dropdown */}
         {menuOpen && (
           <div style={{ position: 'absolute', top: 64, left: 0, right: 0, background: 'rgba(26,5,5,0.98)', borderBottom: '1px solid rgba(212,175,55,0.2)', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12, zIndex: 99 }}>
+            <LocationBadge />
             <Link to="/browse"  onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>🛕 Browse Services</Link>
             <Link to="/pandits" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>👤 All Pandits</Link>
             <Link to="/search"  onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>🔎 Search</Link>
             <Link to="/tell-us" onClick={() => setMenuOpen(false)} className="btn-primary" style={{ textAlign: 'center' }}>💬 Tell Us What You Need</Link>
+            {user?.userType === 'ADMIN' && (
+              <Link to="/admin" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>⚙️ Admin Panel</Link>
+            )}
             {user ? (
               <button onClick={() => { logout(); setMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-ui)', fontSize: '0.88rem', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
                 Sign Out
@@ -104,12 +127,25 @@ export default function Navbar() {
         )}
 
         <style>{`
+          .location-badge {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 8px; padding: 6px 12px; cursor: pointer; color: rgba(255,255,255,0.8);
+            font-family: var(--font-ui); font-size: 0.76rem; transition: all 0.2s;
+            max-width: 180px;
+          }
+          .location-badge:hover { background: rgba(212,175,55,0.15); }
+          .location-badge__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+          .location-badge__caret { opacity: 0.5; flex-shrink: 0; }
           @media (max-width: 700px) {
             .desktop-nav { display: none !important; }
             .mobile-menu-btn { display: block !important; }
           }
         `}</style>
       </nav>
+
+      {/* Location modal — rendered at top level so it overlays everything */}
+      <LocationSelectorModal />
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />}
     </>

@@ -26,7 +26,14 @@ const serviceRequestSchema = new Schema(
       language:      { type: String },
       samagri:       { type: String },
       budget:        { type: String },
-      location:      { type: String },
+      /**
+       * location can be:
+       *   - a plain string (legacy, e.g. "Vijay Nagar, Indore")
+       *   - a normalized geo object from LocationContext:
+       *       { cityId, areaId, stateId, countryId, coordinates, formattedAddress, source }
+       * Using Mixed lets both representations co-exist during migration.
+       */
+      location:      { type: Schema.Types.Mixed },
       providerCount: { type: Number, default: 1 },
       notes:         { type: String },
       /* Open map for any additional extracted fields */

@@ -12,3 +12,6 @@ export { notificationsApi }                  from './notifications.js';
 export { conversationsApi }                  from './conversations.js';
 export { providerAvailabilityApi }           from './providerAvailability.js';
 export { askPanditjiAI, getPanditjiAIInfo }  from './ai.js';
+export { geoApi }   from './geo.js';
+export { adminApi } from './admin.js';
+export { panditPortalApi } from './panditPortal.js';

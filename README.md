@@ -1,256 +1,40 @@
-<div align="center">
+# PanditJi — Religious Services Marketplace
 
-# 🪔 PanditJi — Find Your Pandit
-
-**The transparent marketplace that converts a real-world ceremony need into a bookable religious service.**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
-[![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green.svg)](https://www.mongodb.com/atlas)
-
-[Live Demo](https://find-mu-pandit.vercel.app/) · [Report a Bug](https://github.com/Lahu19/panditji/issues) · [Request a Feature](https://github.com/Lahu19/panditji/issues) · [Contribute](#contributing)
-
-</div>
+A production-ready, configuration-driven platform connecting customers with verified Pandits and religious-service providers across India.
 
 ---
 
-## 🕉️ The Story / Inspiration
+## Platform Architecture
 
-> *"Bhai, next Sunday ghar me shift ho raha hu. Kuch Puja karwani hai. Marathi bolne wala Pandit chahiye aur samagri bhi wahi leke aaye."*
+Three completely separate portals, one shared backend:
 
-This is what most people actually say when they need a Puja. They don't know whether it's called Griha Pravesh, Vastu Puja, or Ganesh Puja. They just know they're moving into a new home and something auspicious should happen.
+```
+                         PANDITJI PLATFORM
+                                │
+              ┌─────────────────┼─────────────────┐
+              │                 │                 │
+              ▼                 ▼                 ▼
+       Customer Portal    Pandit Portal      Admin Panel
+       localhost:5173/    /pandit-portal     /admin
+```
 
-The problem is — every existing solution forces the user to already know what they need, browse a flat directory, call a phone number, negotiate in private, and hope for the best. There's no transparency in pricing, no verified track record, no way to know if the person will show up.
-
-**PanditJi was born out of that frustration.**
-
-The idea is simple but important:
-
-> The platform should convert a human request into a structured, bookable service — even when the person doesn't know the name of the ceremony.
-
-And once you find the right Pandit, everything — price, availability, past events, reviews, verification status, languages, Samagri options — should be laid out completely transparently. No hidden fees. No surprises.
+| Portal | URL prefix | Auth required | Role |
+|---|---|---|---|
+| Customer | `/` | Optional | CUSTOMER |
+| Pandit Portal | `/pandit-portal/*` | Yes | PROVIDER |
+| Admin Panel | `/admin/*` | Yes | ADMIN |
 
 ---
 
-## 🚨 The Problem We're Solving
-
-| Problem | How PanditJi addresses it |
-|---|---|
-| Users don't know the exact Puja name | Natural language → intent → service identification |
-| Prices are negotiated privately | Full price breakdown shown upfront |
-| No way to verify a Pandit's experience | Verified event history, past videos, credential badges |
-| Availability is unknown until you call | Live availability calendar on every profile |
-| No structured match between need and provider | Requirement-based matching engine (hard + soft filters) |
-| Platform designed only for tech-savvy users | Three entry points: Search, Browse, and "Tell us what you need" |
-
----
-
-## ✨ Key Features
-
-- **💬 Natural Language Entry** — type "I'm moving next Sunday and want a house Puja" and the platform understands you
-- **🛕 Browse by Category** — Home, Wedding, Family, Festival, Havan, Corporate, Custom
-- **🔎 Traditional Search** — predictable, no AI, just fast results
-- **🧠 PanditJi AI** — spiritual assistant powered by a secure backend proxy (Gemini under the hood, branded as `panditji-ai`)
-- **🎥 Video Portfolios** — see real past events performed by the Pandit
-- **✅ Transparent Matching** — shows exactly why a Pandit matched your requirement (6/6 criteria met)
-- **📅 Live Availability** — real-time calendar, no fake slots
-- **💰 Full Price Transparency** — service fee + Samagri + travel + platform fee, all shown
-- **🛡️ Verification Badges** — phone, identity, credentials, event history
-- **⭐ Structured Reviews** — punctuality, communication, service, professionalism rated separately
-- **🌍 NRI Booking** — customer location ≠ event location
-- **🔁 Rebook** — one tap to rebook a Pandit you've used before
-
----
-
-## 🗺️ Data Flow Diagram
-
-```
-                         USER
-                          │
-             ┌────────────┼────────────┐
-             ▼            ▼            ▼
-          SEARCH      NATURAL       BROWSE
-         (instant)   LANGUAGE     (category)
-             │        (AI/NLP)        │
-             └────────────┬───────────┘
-                          ▼
-               ┌─────────────────────┐
-               │  INTENT UNDERSTAND  │
-               │  Category detect    │
-               │  Service identify   │
-               └─────────────────────┘
-                          ▼
-               ┌─────────────────────┐
-               │ REQUIREMENT         │
-               │ COLLECTION          │
-               │ (ask only missing)  │
-               └─────────────────────┘
-                          ▼
-               ┌─────────────────────────┐
-               │  Structured Request     │
-               ├─────────────────────────┤
-               │  Service · Date · Time  │
-               │  Location · Language    │
-               │  Samagri · Budget       │
-               │  Provider count         │
-               └─────────────────────────┘
-                          ▼
-               ┌─────────────────────┐
-               │  MATCHING ENGINE    │
-               ├─────────────────────┤
-               │  Hard filters:      │
-               │  Service supported? │
-               │  Available?         │
-               │  In service area?   │
-               ├─────────────────────┤
-               │  Soft preferences:  │
-               │  Language / price   │
-               │  Samagri / reviews  │
-               └─────────────────────┘
-                          ▼
-               ┌─────────────────────┐
-               │  PROVIDER RESULTS   │
-               │  + why they matched │
-               └─────────────────────┘
-                          ▼
-               USER SELECTS → BOOK
-                          ▼
-                       PAYMENT
-                          ▼
-                    EVENT / PUJA
-                          ▼
-                 COMPLETION + REVIEW
-                          ▼
-                   PLATFORM HISTORY
-```
-
----
-
-## 🔄 PanditJi AI — Secure Proxy Architecture
-
-The AI assistant is exposed as a branded endpoint — the browser never knows the underlying model.
-
-```
-Browser
-  │
-  │  POST /api/panditji-ai/chat
-  │  { prompt: "Which puja for Diwali?" }
-  ▼
-Express Server  ──────────────────►  Gemini API
-  │              (server-side,           │
-  │               key hidden)            │
-  │  ◄──────────────────────────────────
-  │  { answer: "...", model: "panditji-ai" }
-  ▼
-Browser sees only "panditji-ai"
-```
-
----
-
-## 🗃️ Database Architecture
-
-The platform is modelled as a **generic religious-services marketplace**, not just a Pandit directory. The backbone:
-
-```
-ServiceRequest ──► Match ──► Booking ──► Payment ──► Review
-```
-
-### Domain Breakdown
-
-| Domain | Collections |
-|---|---|
-| **Identity** | users, organizations |
-| **Catalog** | categories, services, service_requirements |
-| **Providers** | providers, provider_services, provider_availability, provider_media |
-| **Discovery** | service_requests, matches |
-| **Booking** | bookings, booking_items |
-| **Finance** | payments, invoices |
-| **Trust** | reviews, conversations, notifications |
-| **Platform** | audit_logs |
-
-### Category → Service → Requirement chain
-
-```
-Category (e.g. Home & Property)
-    │
-    ▼
-Service (e.g. Griha Pravesh)
-    │
-    ▼
-Requirements (date, time, location, language, samagri, budget)
-    │
-    ▼
-Provider matching
-```
-
----
-
-## 🏗️ Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 18, Vite, Framer Motion |
-| **Styling** | Pure CSS variables, custom design system |
-| **Backend** | Node.js, Express.js |
-| **Database** | MongoDB Atlas (Mongoose ODM) |
-| **Auth** | JWT (jsonwebtoken + bcryptjs) |
-| **AI Proxy** | Gemini Flash via secure server-side proxy |
-| **Deployment** | Vercel (frontend) + Railway/Render (backend) |
-
----
-
-## 📂 Project Structure
-
-```
-panditji/
-├── src/                        # React frontend
-│   ├── api/                    # API helpers (one file per domain)
-│   │   └── ai.js               # PanditJi AI helper
-│   ├── components/             # Shared UI components
-│   ├── context/                # React context (Auth)
-│   ├── pages/                  # Page components
-│   │   ├── Home.jsx            # Landing + entry points
-│   │   ├── TellUs.jsx          # Natural language chat flow
-│   │   ├── Browse.jsx          # Category browser
-│   │   ├── Search.jsx          # Traditional search
-│   │   ├── PanditProfile.jsx   # Full provider profile
-│   │   ├── ServiceDetail.jsx   # Service + requirement flow
-│   │   └── BookingConfirm.jsx  # Booking confirmation
-│   └── data/                   # Static seed/demo data
-│
-├── server/                     # Express backend
-│   ├── models/                 # Mongoose models
-│   ├── routes/                 # Route handlers
-│   │   └── ai.js               # /api/panditji-ai proxy
-│   ├── middleware/             # Auth middleware
-│   ├── db.js                   # MongoDB connection
-│   ├── server.js               # App entry point
-│   └── seed.js                 # Database seeder
-│
-├── public/                     # Static assets
-└── .kiro/                      # Project planning docs
-```
-
----
-
-## 🚀 Getting Started
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- A [MongoDB Atlas](https://www.mongodb.com/atlas) cluster (free tier works)
-- A [Google AI Studio](https://aistudio.google.com) API key for PanditJi AI
+- MongoDB Atlas account (or local MongoDB 6+)
+- A `.env` file in `server/` (copy from `.env.example`)
 
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/Lahu19/panditji.git
-cd panditji
-```
-
-### 2. Install dependencies
+### 1 — Install dependencies
 
 ```bash
 # Frontend
@@ -260,156 +44,352 @@ npm install
 cd server && npm install
 ```
 
-### 3. Configure environment
+### 2 — Configure environment
 
 ```bash
 cp server/.env.example server/.env
 ```
 
-Edit `server/.env`:
+Edit `server/.env` and set:
 
-```env
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.xxx.mongodb.net/panditji
-JWT_SECRET=your_strong_secret_here
-PORT=5001
-NODE_ENV=development
-CORS_ORIGIN=http://localhost:5173
-GEMINI_API_KEY=your_gemini_api_key_here
+```
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/panditji
+JWT_SECRET=<generate a strong random string>
+GEMINI_API_KEY=<from Google AI Studio — optional, for AI chat>
 ```
 
-> ⚠️ Never commit `.env`. It's in `.gitignore`.
-
-### 4. MongoDB Atlas — allow your IP
-
-Go to **Atlas → Network Access → Add IP Address → Add Current IP**.
-
-For dev convenience you can use `0.0.0.0/0` (allow all IPs).
-
-### 5. Seed the database (optional)
+### 3 — Seed the database
 
 ```bash
 cd server && npm run seed
 ```
 
-### 6. Run locally
+This creates:
+
+- 6 categories, 23 services with requirement fields
+- 3 verified provider accounts (Indore, MP)
+- 1 admin account
+- Geo hierarchy: 1 country, 10 states, 16 cities, 16 areas (all with 2dsphere coordinates)
+- ProviderServiceArea records for each seeded provider
+
+**Seed credentials:**
+
+| Account | Email | Password | Role |
+|---|---|---|---|
+| Admin | `admin@panditji.dev` | `Admin@123!` | ADMIN |
+| Pandit 1 | `rajesh.sharma@panditji.dev` | `Password123!` | PROVIDER |
+| Pandit 2 | `mahesh.joshi@panditji.dev` | `Password123!` | PROVIDER |
+| Pandit 3 | `suresh.dwivedi@panditji.dev` | `Password123!` | PROVIDER |
+
+### 4 — Run
+
+Open two terminals:
 
 ```bash
-# Terminal 1 — backend
+# Terminal 1 — Backend (port 5001)
 cd server && npm run dev
 
-# Terminal 2 — frontend
+# Terminal 2 — Frontend (port 5173)
 npm run dev
 ```
 
-Frontend: `http://localhost:5173`  
-Backend: `http://localhost:5001`
+Visit `http://localhost:5173`
 
 ---
 
-## 🌐 API Reference
+## Portal URLs
 
-### PanditJi AI
+### Customer Portal
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/panditji-ai/info` | Branding info (no key leaked) |
-| `POST` | `/api/panditji-ai/chat` | Chat with PanditJi AI |
-
-**Chat request body:**
-```json
-{
-  "prompt": "Which puja should I do for Diwali?",
-  "history": []
-}
-```
-
-**Response:**
-```json
-{
-  "answer": "For Diwali, Lakshmi Puja is the most...",
-  "model": "panditji-ai",
-  "finishReason": "STOP"
-}
-```
-
-### Core Domains
-
-| Prefix | Description |
+| Path | Description |
 |---|---|
-| `/api/auth` | Register, login, token |
-| `/api/providers` | Provider profiles |
-| `/api/services` | Service catalog |
-| `/api/categories` | Service categories |
-| `/api/bookings` | Booking management |
-| `/api/service-requests` | Natural language requests |
-| `/api/matches` | Provider matching results |
-| `/api/reviews` | Customer reviews |
-| `/api/payments` | Payment records |
-| `/api/notifications` | Notifications |
-| `/api/conversations` | In-platform messaging |
-| `/api/health` | Server health check |
+| `/` | Home — location badge, three entry points |
+| `/tell-us` | AI-assisted "tell us what you need" flow |
+| `/browse` | Browse services by category |
+| `/search` | Search providers and services |
+| `/pandits` | All providers directory |
+| `/pandit/:id` | Provider profile |
+| `/service/:id` | Service detail |
+| `/book/:id` | Booking confirmation |
+
+### Pandit Portal
+
+| Path | Description |
+|---|---|
+| `/pandit-portal/login` | Sign in / register as provider |
+| `/pandit-portal/become` | Shown to customers who try to access the portal |
+| `/pandit-portal` | Dashboard — KPIs, completion, upcoming bookings |
+| `/pandit-portal/onboarding` | 11-step guided setup wizard |
+| `/pandit-portal/profile` | Edit profile with live customer preview |
+| `/pandit-portal/services` | Add and configure offered services |
+| `/pandit-portal/service-areas` | Define coverage (city / area / radius) |
+| `/pandit-portal/availability` | Weekly schedule + block dates |
+| `/pandit-portal/requests` | Accept or decline incoming bookings |
+| `/pandit-portal/bookings` | Upcoming and past bookings |
+| `/pandit-portal/earnings` | Revenue dashboard + payment history |
+| `/pandit-portal/reviews` | Customer reviews with breakdown |
+| `/pandit-portal/verification` | Verification checklist + submit |
+| `/pandit-portal/notifications` | In-app notification centre |
+
+### Admin Panel
+
+| Path | Description |
+|---|---|
+| `/admin` | Dashboard — KPIs, charts, recent activity |
+| `/admin/providers` | Provider list + verify / suspend |
+| `/admin/users` | Customer and admin user management |
+| `/admin/locations` | Geo hierarchy management (cities, areas, stats) |
+| `/admin/services` | Service catalogue with requirement fields |
+| `/admin/requests` | Service requests + match details |
+| `/admin/bookings` | All bookings with filters |
+| `/admin/payments` | Payment history + payout tracking |
+| `/admin/reviews` | Review moderation (flag / hide / restore) |
+| `/admin/audit` | Immutable audit log with before/after diff |
 
 ---
 
-## 🤝 Contributing
+## API Overview
 
-We're building something meaningful and we'd love your help. PanditJi is open to contributions of all kinds — code, design, documentation, translations, and ideas.
+Base URL: `http://localhost:5001/api`
 
-### Ways to contribute
+All protected routes require: `Authorization: Bearer <jwt>`
 
-- 🐛 **Bug reports** — open an [issue](https://github.com/Lahu19/panditji/issues)
-- 💡 **Feature ideas** — open a [discussion](https://github.com/Lahu19/panditji/discussions)
-- 🌐 **Translations** — Hindi, Marathi, Gujarati, Tamil, Telugu welcome
-- 🎨 **Design** — UI/UX improvements, accessibility
-- 🧪 **Tests** — unit tests, integration tests
-- 📖 **Docs** — improve this README or add API docs
+### Auth
 
-### How to contribute code
+| Method | Path | Description |
+|---|---|---|
+| POST | `/auth/register` | Register new user |
+| POST | `/auth/login` | Login, returns JWT |
+| GET | `/auth/me` | Get current user from token |
 
-1. **Fork** the repository
-2. **Create a branch** — `git checkout -b feature/your-feature-name`
-3. **Make your changes** and commit with a clear message
-4. **Push** — `git push origin feature/your-feature-name`
-5. **Open a Pull Request** against `main`
+### Geo Location
 
-### Good first issues
+| Method | Path | Description |
+|---|---|---|
+| GET | `/geo/search?q=Vijay+Nagar` | Search cities and areas |
+| POST | `/geo/resolve` | Resolve `{latitude, longitude}` → location hierarchy |
+| GET | `/geo/countries` | List active countries |
+| GET | `/geo/states?countryId=IN` | List states by country |
+| GET | `/geo/cities?stateId=IN_MP` | List cities by state |
+| GET | `/geo/areas?cityId=IN_MP_INDORE` | List areas by city |
+| GET | `/geo/location/:id` | Get single location by area/city ID |
+| POST | `/geo/provider-service-areas` | Add provider coverage record |
 
-Look for issues tagged [`good first issue`](https://github.com/Lahu19/panditji/labels/good%20first%20issue) — these are smaller, well-scoped tasks perfect for getting familiar with the codebase.
+### Providers
 
-### Code style
+| Method | Path | Description |
+|---|---|---|
+| GET | `/providers` | List with filters (language, samagri, verified, serviceId, price range) |
+| GET | `/providers/search?q=` | Text search |
+| GET | `/providers/:id` | Profile + recent reviews |
+| POST | `/providers` | Create provider profile |
+| PATCH | `/providers/:id` | Update (owner or admin) |
+| GET | `/providers/:id/availability` | Get availability schedule |
 
-- Use the existing patterns — this project doesn't use a linter yet, so match the style you see
-- Keep components focused and small
-- Add JSDoc comments on API helpers
-- Never commit secrets or `.env` files
+### Service Requests + Matching
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/service-requests` | Create request with geo location object |
+| GET | `/service-requests` | List own requests |
+| PATCH | `/service-requests/:id` | Update requirements |
+| POST | `/service-requests/:id/match` | Run geo-aware matching engine |
+| GET | `/matches?requestId=` | Get match results |
+| PATCH | `/matches/:id/select` | Select a provider |
+
+### Bookings + Payments
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/bookings` | Create booking |
+| GET | `/bookings` | List own bookings |
+| PATCH | `/bookings/:id/status` | Transition booking status |
+| POST | `/payments` | Initiate payment |
+| POST | `/payments/:id/confirm` | Confirm payment (simulation) |
+| POST | `/payments/:id/refund` | Initiate refund |
+
+### Pandit Portal (PROVIDER role)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/pandit-portal/me` | Profile + completion score |
+| PATCH | `/pandit-portal/profile` | Update profile |
+| PATCH | `/pandit-portal/location` | Update base location with geo IDs |
+| POST | `/pandit-portal/onboarding/step` | Save individual wizard step |
+| GET | `/pandit-portal/services-catalog` | Services grouped by category (from DB) |
+| GET | `/pandit-portal/my-services` | Provider's configured services |
+| POST | `/pandit-portal/my-services` | Add service |
+| PATCH | `/pandit-portal/my-services/:id` | Update service pricing/config |
+| DELETE | `/pandit-portal/my-services/:id` | Remove service |
+| GET | `/pandit-portal/service-areas` | Provider coverage records |
+| POST | `/pandit-portal/service-areas` | Add coverage area |
+| GET | `/pandit-portal/availability` | Get schedule |
+| PUT | `/pandit-portal/availability` | Update schedule |
+| POST | `/pandit-portal/availability/block` | Block date range |
+| GET | `/pandit-portal/bookings?tab=upcoming` | Provider's bookings |
+| PATCH | `/pandit-portal/bookings/:id/respond` | Accept or decline booking |
+| GET | `/pandit-portal/earnings` | Revenue KPIs + payment history |
+| GET | `/pandit-portal/reviews` | Received reviews with summary |
+| PATCH | `/pandit-portal/submit` | Submit profile for verification |
+
+### Admin (ADMIN role)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/admin/dashboard` | KPIs, charts, booking trend |
+| GET | `/admin/users` | Paginated user list with filters |
+| PATCH | `/admin/users/:id` | Update user status / role |
+| GET | `/admin/providers` | Paginated provider list with filters |
+| PATCH | `/admin/providers/:id/verify` | Verify specific document type |
+| PATCH | `/admin/providers/:id/status` | Change provider status |
+| GET | `/admin/bookings` | Paginated bookings with filters |
+| GET | `/admin/payments` | Payment history with summary |
+| GET | `/admin/reviews` | Reviews with filter |
+| PATCH | `/admin/reviews/:id/moderate` | Flag / hide / restore review |
+| GET | `/admin/audit-logs` | Immutable audit log with filters |
+| GET | `/admin/location-stats` | Provider + booking counts by city |
+| GET | `/admin/service-requests` | All service requests |
+| GET | `/admin/services` | All services |
 
 ---
 
-## 🗺️ Roadmap
+## Geo Location System
 
-- [ ] Full availability calendar with real-time slot management
-- [ ] Stripe / Razorpay payment integration
-- [ ] SMS / WhatsApp notifications
-- [ ] Provider mobile app (React Native)
-- [ ] Multi-language support (Hindi, Marathi, Gujarati)
-- [ ] NRI booking flow (customer ≠ event location)
-- [ ] Corporate booking with invoice generation
-- [ ] Verified credential upload for providers
-- [ ] Admin dashboard
-- [ ] PWA / offline support
+### Location hierarchy
+
+```
+Country (IN)
+  └── State (IN_MP — Madhya Pradesh)
+        └── City (IN_MP_INDORE — Indore)
+              └── Area (IN_MP_INDORE_VIJAY_NAGAR — Vijay Nagar)
+```
+
+### LocationContext (frontend)
+
+`useLocation()` hook manages:
+- `detectedLocation` — from browser GPS + reverse-geocode (never silently applied)
+- `selectedLocation` — user-confirmed location (persisted to `localStorage`)
+- `permissionState` — `unknown | requesting | granted | denied | unavailable`
+- `detectionState` — `idle | detecting | resolving | done | error`
+
+```js
+// Get location object to embed in a service request
+const { getLocationForRequest } = useLocation();
+const location = getLocationForRequest(); // { cityId, areaId, stateId, countryId, coordinates, formattedAddress }
+```
+
+### Matching engine
+
+`POST /service-requests/:id/match` applies filters in this order:
+1. MongoDB `$near` pre-filter (100 km radius) — uses `2dsphere` index on `Provider.location`
+2. `ProviderServiceArea` check — verifies the provider explicitly covers the requested city / area / state, or is within a radius
+3. Haversine fallback for radius coverage
+4. Legacy `Provider.serviceAreas[]` string fallback
+5. Score: 60 base + 15 language + 15 samagri + 10 rating + 5 verified
 
 ---
 
-## 📄 License
+## Booking location principle
 
-MIT License — see [LICENSE](./LICENSE) for details.
+```
+User GPS location      ≠     Booking event location
+(Mumbai)                     (Indore — booking for parents)
+```
+
+The system stores separate:
+- `user.currentLocation` (volatile, in React context)
+- `serviceRequest.extractedRequirements.location` (frozen at request creation)
+- `booking.event.location` (frozen at booking creation)
 
 ---
 
-<div align="center">
+## Provider verification flow
 
-Made with 🪔 for everyone who just wants to do the right Puja without the hassle.
+```
+Pandit registers (PROVIDER account)
+        ↓
+Onboarding wizard (11 steps)
+        ↓
+Submit profile → status: PENDING_VERIFICATION
+        ↓
+Admin panel verification workflow
+        ↓
+Admin marks IDENTITY + PHONE etc. as VERIFIED
+        ↓
+Provider status → ACTIVE
+        ↓
+Provider appears in customer matching results
+```
 
-**[⭐ Star this repo](https://github.com/Lahu19/panditji)** if you find it useful — it helps others discover the project.
+Providers **cannot** self-activate. Admin approval is required.
 
-</div>
+---
+
+## Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `MONGODB_URI` | ✅ | MongoDB Atlas connection string |
+| `JWT_SECRET` | ✅ | Strong random string for JWT signing |
+| `PORT` | Optional | Server port (default: 5001) |
+| `NODE_ENV` | Optional | `development` or `production` |
+| `CORS_ORIGIN` | Optional | Frontend URL for CORS (default: `*`) |
+| `GEMINI_API_KEY` | Optional | Google Gemini API key for AI chat |
+
+---
+
+## Project structure
+
+```
+find-MU-PANDIT/
+├── src/                        # React frontend
+│   ├── api/                    # API client modules
+│   │   ├── client.js           # Base fetch wrapper
+│   │   ├── geo.js              # Geo location API
+│   │   ├── admin.js            # Admin API
+│   │   └── panditPortal.js     # Provider portal API
+│   ├── context/
+│   │   ├── AuthContext.jsx     # Global auth state
+│   │   ├── LocationContext.jsx # Geo location state machine
+│   │   └── PanditPortalContext.jsx  # Provider portal state
+│   ├── components/
+│   │   ├── Navbar.jsx          # Customer navbar with LocationBadge
+│   │   └── LocationSelector.jsx # LocationBadge, LocationSearch, modal
+│   ├── pages/
+│   │   ├── Home.jsx            # Customer home
+│   │   ├── ...                 # Other customer pages
+│   │   ├── admin/              # Admin panel pages
+│   │   └── pandit-portal/      # Pandit portal pages
+│   └── index.css               # All CSS (customer + admin + portal)
+│
+└── server/                     # Express backend
+    ├── models/                 # Mongoose models
+    │   ├── GeoCountry.js       # ISO country master
+    │   ├── GeoState.js         # State / province
+    │   ├── GeoCity.js          # City with text index
+    │   ├── GeoArea.js          # Area with 2dsphere index
+    │   ├── ProviderServiceArea.js  # Provider coverage
+    │   ├── Provider.js         # Provider profile + geo IDs
+    │   ├── ServiceRequest.js   # Request with Mixed location field
+    │   └── ...                 # Other models
+    ├── routes/
+    │   ├── geo.js              # /api/geo/*
+    │   ├── admin.js            # /api/admin/*
+    │   ├── panditPortal.js     # /api/pandit-portal/*
+    │   └── ...                 # Other route files
+    ├── middleware/
+    │   └── auth.js             # JWT authRequired / optionalAuth
+    ├── seed.js                 # Database seed script
+    └── server.js               # Express app entry point
+```
+
+---
+
+## Key design principles
+
+- **Configuration-driven** — services, categories, locations, and requirement fields are in the database, not hardcoded in the frontend. Adding a new service or city requires no frontend code changes.
+- **Geo-first matching** — provider matching uses MongoDB `$near` and `ProviderServiceArea` records rather than string comparison. A customer in Mumbai can book a ceremony in Indore.
+- **Transparent matching** — every match result shows human-readable `matchReasons[]`. Scores are never exposed to customers as numbers.
+- **AI assists, backend decides** — Gemini extracts intent and requirements from natural language. Availability, eligibility, geo coverage, and pricing are all determined by deterministic backend logic.
+- **Provider trust layer** — providers cannot self-activate. `PENDING_VERIFICATION → ACTIVE` requires explicit admin approval per the verification workflow.
+- **Audit everything** — `AuditLog` is append-only and wired into provider verification, status changes, review moderation, booking accept/decline, and match runs.

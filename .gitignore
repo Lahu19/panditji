@@ -6,6 +6,8 @@ server/node_modules/
 .env
 .env.production
 .env.local
+.env.development.local
+.env.*.local
 server/.env
 
 # Build output

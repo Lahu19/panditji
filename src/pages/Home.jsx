@@ -680,16 +680,32 @@ export default function Home() {
               </p>
             </div>
             {[
-              { title: 'Services', links: ['Griha Pravesh', 'Wedding', 'Havan', 'Corporate Puja', 'Satyanarayan'] },
-              { title: 'Platform', links: ['How It Works', 'Verified Pandits', 'Pricing', 'For Pandits'] },
+              { title: 'Services', links: [
+                  { label: 'Griha Pravesh', to: '/service/griha-pravesh' },
+                  { label: 'Wedding',       to: '/service/wedding-ceremony' },
+                  { label: 'Havan',         to: '/service/havan' },
+                  { label: 'Corporate Puja',to: '/service/office-inaug' },
+                  { label: 'Satyanarayan',  to: '/service/satyanarayan' },
+              ]},
+              { title: 'Platform', links: [
+                  { label: 'How It Works',    to: '/browse' },
+                  { label: 'Verified Pandits',to: '/pandits' },
+                  { label: 'Search',          to: '/search' },
+                  { label: 'For Pandits',     to: '/pandit-portal/login' },
+              ]},
             ].map(({ title, links }) => (
               <div key={title} style={{ flex: '1 1 160px' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--gold)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
                   {title}
                 </div>
-                {links.map(l => (
-                  <div key={l} style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', marginBottom: 8, fontFamily: 'var(--font-ui)', cursor: 'pointer' }}>
-                    {l}
+                {links.map(({ label, to }) => (
+                  <div key={label} style={{ marginBottom: 8 }}>
+                    <Link to={to} style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-ui)', textDecoration: 'none', cursor: 'pointer' }}
+                      onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                    >
+                      {label}
+                    </Link>
                   </div>
                 ))}
               </div>

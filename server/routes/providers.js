@@ -18,6 +18,12 @@ function buildFilter(q) {
   if (q.priceMax) f['pricing.startingFrom'] = { ...f['pricing.startingFrom'], $lte: parseInt(q.priceMax) };
   if (q.priceMin) f['pricing.startingFrom'] = { ...f['pricing.startingFrom'], $gte: parseInt(q.priceMin) };
 
+  /* City filter — case-insensitive partial match on location.city */
+  if (q.city) {
+    const safeCity = q.city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    f['location.city'] = { $regex: safeCity, $options: 'i' };
+  }
+
   return f;
 }
 

@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Edit3, CheckCircle, ChevronRight, Send } from 'l
 import MandalaDecor, { RangoliDivider } from '../components/MandalaDecor';
 import { PANDITS, CATEGORIES } from '../data/services';
 import { serviceRequestsApi, matchesApi } from '../api/index.js';
+import { useLocation as useGeoLocation } from '../context/LocationContext.jsx';
 
 /* ══════════════════════════════════════════
    INTENT DETECTION
@@ -209,6 +210,7 @@ function ResultCard({ pandit, req, onView, onBook }) {
 export default function TellUs() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { selectedLocation, displayName: locationDisplayName, openSelector, getLocationForRequest } = useGeoLocation();
 
   /* mode: 'tell' | 'decide' */
   const initialMode = searchParams.get('mode') === 'decide' ? 'decide' : 'tell';
@@ -349,9 +351,11 @@ export default function TellUs() {
 
   function startSearch() {
     setPhase('loading');
-    // Submit to real API, fall back to static on error
     async function doSearch() {
       try {
+        /* Build the geo location object from LocationContext */
+        const geoLocation = getLocationForRequest();
+
         const { request } = await serviceRequestsApi.create({
           source: 'NATURAL_LANGUAGE',
           rawInput: inputText,
@@ -363,9 +367,10 @@ export default function TellUs() {
             language:      req.language !== '—' ? req.language : undefined,
             samagri:       req.samagri  !== '—' ? req.samagri  : undefined,
             budget:        req.budget   !== '—' ? req.budget   : undefined,
+            /* Embed the normalized geo location object — matching engine uses cityId/areaId */
+            location:      geoLocation || undefined,
           },
         });
-        // Run matching engine
         try {
           await serviceRequestsApi.match(request._id);
         } catch (_) { /* matching failure is non-fatal */ }
@@ -442,6 +447,7 @@ export default function TellUs() {
             {icon:'🗣️',label:'Language',val:req.language},
             {icon:'🧺',label:'Samagri', val:req.samagri},
             {icon:'💰',label:'Budget',  val:req.budget},
+            {icon:'📍',label:'Location',val:locationDisplayName},
           ].map(({icon,label,val})=>val&&val!=='—'&&(
             <div key={label} style={{ display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid rgba(212,175,55,0.15)',fontFamily:'var(--font-ui)',fontSize:'0.78rem' }}>
               <span style={{ color:'rgba(255,255,255,0.6)' }}>{icon} {label}</span>
@@ -607,6 +613,16 @@ export default function TellUs() {
           <p style={{ fontFamily:'var(--font-body)',fontSize:'1.05rem',color:'var(--text-light)',fontStyle:'italic',maxWidth:440,margin:'0 auto',lineHeight:1.6 }}>
             Describe your event naturally. You don't need to know the exact Puja name.
           </p>
+
+          {/* Location context — shows which location will be used for matching */}
+          <button
+            onClick={openSelector}
+            style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:14, background:'rgba(255,107,0,0.07)', border:'1.5px solid rgba(255,107,0,0.2)', borderRadius:50, padding:'6px 16px', cursor:'pointer', fontFamily:'var(--font-ui)', fontSize:'0.78rem', color:'var(--saffron)', transition:'all 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,107,0,0.12)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,107,0,0.07)'}
+          >
+            📍 {locationDisplayName || 'Set your location'} <span style={{ color:'var(--text-light)' }}>· change</span>
+          </button>
         </div>
 
         {/* Example prompts */}

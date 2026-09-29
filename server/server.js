@@ -10,8 +10,40 @@ const connectDB = require('./db');
 const app  = express();
 const PORT = process.env.PORT || 5001;
 
-/* ── Middleware ── */
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+/* ── CORS ──
+ * CORS_ORIGIN can be:
+ *   '*'                              → allow all (dev / open API)
+ *   'https://example.com'           → single origin
+ *   'https://a.com,https://b.com'   → comma-separated list (production)
+ *
+ * The function form is required so the server echoes back the specific
+ * request origin in the ACAO header — credentials: true requires this.
+ */
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  credentials: true,
+  origin(requestOrigin, callback) {
+    /* Allow requests with no Origin header (curl, Postman, server-to-server) */
+    if (!requestOrigin) return callback(null, true);
+    /* Wildcard — allow everything */
+    if (ALLOWED_ORIGINS.includes('*')) return callback(null, true);
+    /* Exact match */
+    if (ALLOWED_ORIGINS.includes(requestOrigin)) return callback(null, requestOrigin);
+    /* Vercel preview deployments — e.g. find-mu-pandit-git-main-xyz.vercel.app */
+    const isVercelPreview = ALLOWED_ORIGINS.some(o =>
+      o.endsWith('.vercel.app') && requestOrigin.endsWith('.vercel.app') &&
+      requestOrigin.includes(o.replace('https://', '').split('.vercel.app')[0])
+    );
+    if (isVercelPreview) return callback(null, requestOrigin);
+    callback(new Error(`CORS: origin '${requestOrigin}' not allowed`));
+  },
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
@@ -36,6 +68,15 @@ app.use('/api/provider-availability',  require('./routes/providerAvailability'))
 app.use('/api/audit-logs',             require('./routes/auditLogs'));
 
 app.use('/api/panditji-ai',             require('./routes/ai'));
+
+/* ── Geo Location ── */
+app.use('/api/geo',                    require('./routes/geo'));
+
+/* ── Admin Panel ── */
+app.use('/api/admin',                  require('./routes/admin'));
+
+/* ── Pandit Portal ── */
+app.use('/api/pandit-portal',          require('./routes/panditPortal'));
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {

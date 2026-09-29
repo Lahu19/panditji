@@ -1,19 +1,106 @@
 'use strict';
 /**
  * Seed script — populates MongoDB with realistic categories, services,
- * service requirements, and provider profiles matching the static frontend data.
+ * service requirements, provider profiles, and geo hierarchy data.
  *
  * Run: node server/seed.js
  */
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const mongoose = require('mongoose');
 
-const Category            = require('./models/Category');
-const Service             = require('./models/Service');
-const User                = require('./models/User');
-const Provider            = require('./models/Provider');
-const ProviderService     = require('./models/ProviderService');
+const Category             = require('./models/Category');
+const Service              = require('./models/Service');
+const User                 = require('./models/User');
+const Provider             = require('./models/Provider');
+const ProviderService      = require('./models/ProviderService');
 const ProviderAvailability = require('./models/ProviderAvailability');
+const ProviderServiceArea  = require('./models/ProviderServiceArea');
+const GeoCountry           = require('./models/GeoCountry');
+const GeoState             = require('./models/GeoState');
+const GeoCity              = require('./models/GeoCity');
+const GeoArea              = require('./models/GeoArea');
+
+/* ════════════════════════════════════════════════════
+   GEO HIERARCHY SEED DATA
+   Structure: India → key states → key cities → areas
+   Every _id follows the pattern:
+     Country  : ISO 3166-1 alpha-2        "IN"
+     State    : "<countryId>_<stateCode>" "IN_MP"
+     City     : "<stateId>_<CITY>"        "IN_MP_INDORE"
+     Area     : "<cityId>_<AREA>"         "IN_MP_INDORE_VIJAY_NAGAR"
+════════════════════════════════════════════════════ */
+
+const GEO_COUNTRIES = [
+  {
+    _id: 'IN', name: 'India', officialName: 'Republic of India',
+    dialCode: '+91', currencyCode: 'INR', currencySymbol: '₹',
+    languages: ['hi', 'en'], timezone: 'Asia/Kolkata', flagEmoji: '🇮🇳',
+    isActive: true,
+  },
+];
+
+const GEO_STATES = [
+  { _id: 'IN_MP',  countryId: 'IN', name: 'Madhya Pradesh',  code: 'MP',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MH',  countryId: 'IN', name: 'Maharashtra',      code: 'MH',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_RJ',  countryId: 'IN', name: 'Rajasthan',        code: 'RJ',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_GJ',  countryId: 'IN', name: 'Gujarat',          code: 'GJ',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_DL',  countryId: 'IN', name: 'Delhi',            code: 'DL',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_UP',  countryId: 'IN', name: 'Uttar Pradesh',    code: 'UP',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_KA',  countryId: 'IN', name: 'Karnataka',        code: 'KA',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_TN',  countryId: 'IN', name: 'Tamil Nadu',       code: 'TN',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_WB',  countryId: 'IN', name: 'West Bengal',      code: 'WB',  timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_PB',  countryId: 'IN', name: 'Punjab',           code: 'PB',  timezone: 'Asia/Kolkata', isActive: true },
+];
+
+const GEO_CITIES = [
+  /* MP */
+  { _id: 'IN_MP_INDORE',  stateId: 'IN_MP', countryId: 'IN', name: 'Indore',  aliases: ['Indaur'],           coordinates: { latitude: 22.7196, longitude: 75.8577 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MP_BHOPAL',  stateId: 'IN_MP', countryId: 'IN', name: 'Bhopal',  aliases: ['Bhopal City'],      coordinates: { latitude: 23.2599, longitude: 77.4126 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MP_UJJAIN',  stateId: 'IN_MP', countryId: 'IN', name: 'Ujjain',  aliases: ['Ujjain City'],      coordinates: { latitude: 23.1765, longitude: 75.7885 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MP_GWALIOR', stateId: 'IN_MP', countryId: 'IN', name: 'Gwalior', aliases: [],                   coordinates: { latitude: 26.2183, longitude: 78.1828 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MP_DEWAS',   stateId: 'IN_MP', countryId: 'IN', name: 'Dewas',   aliases: [],                   coordinates: { latitude: 22.9676, longitude: 76.0534 }, timezone: 'Asia/Kolkata', isActive: true },
+  /* MH */
+  { _id: 'IN_MH_PUNE',    stateId: 'IN_MH', countryId: 'IN', name: 'Pune',    aliases: ['Poona'],            coordinates: { latitude: 18.5204, longitude: 73.8567 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MH_MUMBAI',  stateId: 'IN_MH', countryId: 'IN', name: 'Mumbai',  aliases: ['Bombay'],           coordinates: { latitude: 19.0760, longitude: 72.8777 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MH_NASHIK',  stateId: 'IN_MH', countryId: 'IN', name: 'Nashik',  aliases: ['Nasik'],            coordinates: { latitude: 19.9975, longitude: 73.7898 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_MH_NAGPUR',  stateId: 'IN_MH', countryId: 'IN', name: 'Nagpur',  aliases: [],                   coordinates: { latitude: 21.1458, longitude: 79.0882 }, timezone: 'Asia/Kolkata', isActive: true },
+  /* DL */
+  { _id: 'IN_DL_DELHI',   stateId: 'IN_DL', countryId: 'IN', name: 'New Delhi', aliases: ['Delhi'],          coordinates: { latitude: 28.6139, longitude: 77.2090 }, timezone: 'Asia/Kolkata', isActive: true },
+  /* UP */
+  { _id: 'IN_UP_VARANASI',stateId: 'IN_UP', countryId: 'IN', name: 'Varanasi', aliases: ['Kashi','Banaras'], coordinates: { latitude: 25.3176, longitude: 82.9739 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_UP_LUCKNOW', stateId: 'IN_UP', countryId: 'IN', name: 'Lucknow',  aliases: [],                  coordinates: { latitude: 26.8467, longitude: 80.9462 }, timezone: 'Asia/Kolkata', isActive: true },
+  /* GJ */
+  { _id: 'IN_GJ_AHMEDABAD',stateId:'IN_GJ', countryId: 'IN', name: 'Ahmedabad',aliases: ['Amdavad'],         coordinates: { latitude: 23.0225, longitude: 72.5714 }, timezone: 'Asia/Kolkata', isActive: true },
+  { _id: 'IN_GJ_SURAT',   stateId: 'IN_GJ', countryId: 'IN', name: 'Surat',   aliases: [],                   coordinates: { latitude: 21.1702, longitude: 72.8311 }, timezone: 'Asia/Kolkata', isActive: true },
+  /* KA */
+  { _id: 'IN_KA_BANGALORE',stateId:'IN_KA', countryId: 'IN', name: 'Bangalore',aliases: ['Bengaluru'],       coordinates: { latitude: 12.9716, longitude: 77.5946 }, timezone: 'Asia/Kolkata', isActive: true },
+  /* TN */
+  { _id: 'IN_TN_CHENNAI', stateId: 'IN_TN', countryId: 'IN', name: 'Chennai', aliases: ['Madras'],           coordinates: { latitude: 13.0827, longitude: 80.2707 }, timezone: 'Asia/Kolkata', isActive: true },
+];
+
+/* ── Areas — detailed coverage for Indore (primary city in seed data) ── */
+const GEO_AREAS = [
+  /* Indore areas — matches existing provider serviceAreas strings */
+  { _id: 'IN_MP_INDORE_VIJAY_NAGAR',    cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Vijay Nagar',    aliases: ['Vijaynagar','VN'],           postalCode: '452010', coordinates: { latitude: 22.7533, longitude: 75.8937 }, geoPoint: { type: 'Point', coordinates: [75.8937, 22.7533] }, isActive: true },
+  { _id: 'IN_MP_INDORE_PALASIA',        cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Palasia',        aliases: ['Palasiya'],                  postalCode: '452001', coordinates: { latitude: 22.7177, longitude: 75.8659 }, geoPoint: { type: 'Point', coordinates: [75.8659, 22.7177] }, isActive: true },
+  { _id: 'IN_MP_INDORE_RAU',            cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Rau',            aliases: ['Raau'],                      postalCode: '453331', coordinates: { latitude: 22.6333, longitude: 75.8303 }, geoPoint: { type: 'Point', coordinates: [75.8303, 22.6333] }, isActive: true },
+  { _id: 'IN_MP_INDORE_BHANWARKUAN',    cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Bhanwarkuan',    aliases: ['Bhanwar Kuan'],              postalCode: '452001', coordinates: { latitude: 22.6987, longitude: 75.8341 }, geoPoint: { type: 'Point', coordinates: [75.8341, 22.6987] }, isActive: true },
+  { _id: 'IN_MP_INDORE_RAJENDRA_NAGAR', cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Rajendra Nagar', aliases: ['Rajendranagar','Raj Nagar'], postalCode: '452012', coordinates: { latitude: 22.6868, longitude: 75.8561 }, geoPoint: { type: 'Point', coordinates: [75.8561, 22.6868] }, isActive: true },
+  { _id: 'IN_MP_INDORE_SCHEME_78',      cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Scheme 78',      aliases: ['Scheme No 78','LIG Colony'],  postalCode: '452010', coordinates: { latitude: 22.7381, longitude: 75.9082 }, geoPoint: { type: 'Point', coordinates: [75.9082, 22.7381] }, isActive: true },
+  { _id: 'IN_MP_INDORE_MG_ROAD',        cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'MG Road',        aliases: ['Mahatma Gandhi Road'],       postalCode: '452001', coordinates: { latitude: 22.7181, longitude: 75.8539 }, geoPoint: { type: 'Point', coordinates: [75.8539, 22.7181] }, isActive: true },
+  { _id: 'IN_MP_INDORE_DEWAS_ROAD',     cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Dewas Road',     aliases: ['AB Road','Dewas Naka'],      postalCode: '452001', coordinates: { latitude: 22.7452, longitude: 75.8786 }, geoPoint: { type: 'Point', coordinates: [75.8786, 22.7452] }, isActive: true },
+  { _id: 'IN_MP_INDORE_SUPER_CORRIDOR', cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'Super Corridor', aliases: ['IT Park','Bypass Road'],     postalCode: '453771', coordinates: { latitude: 22.7578, longitude: 75.9285 }, geoPoint: { type: 'Point', coordinates: [75.9285, 22.7578] }, isActive: true },
+  { _id: 'IN_MP_INDORE_SOUTH_TUKOGANJ', cityId: 'IN_MP_INDORE', stateId: 'IN_MP', countryId: 'IN', name: 'South Tukoganj', aliases: ['Tukoganj'],                  postalCode: '452001', coordinates: { latitude: 22.7182, longitude: 75.8617 }, geoPoint: { type: 'Point', coordinates: [75.8617, 22.7182] }, isActive: true },
+  /* Bhopal areas */
+  { _id: 'IN_MP_BHOPAL_NEW_MARKET',     cityId: 'IN_MP_BHOPAL', stateId: 'IN_MP', countryId: 'IN', name: 'New Market',     aliases: ['Newmarket'],                 postalCode: '462003', coordinates: { latitude: 23.2378, longitude: 77.4040 }, geoPoint: { type: 'Point', coordinates: [77.4040, 23.2378] }, isActive: true },
+  { _id: 'IN_MP_BHOPAL_ARERA_COLONY',   cityId: 'IN_MP_BHOPAL', stateId: 'IN_MP', countryId: 'IN', name: 'Arera Colony',   aliases: ['Arera Hills'],               postalCode: '462016', coordinates: { latitude: 23.2185, longitude: 77.4512 }, geoPoint: { type: 'Point', coordinates: [77.4512, 23.2185] }, isActive: true },
+  /* Pune areas */
+  { _id: 'IN_MH_PUNE_KOREGAON_PARK',    cityId: 'IN_MH_PUNE',   stateId: 'IN_MH', countryId: 'IN', name: 'Koregaon Park',  aliases: ['KP'],                        postalCode: '411001', coordinates: { latitude: 18.5362, longitude: 73.8926 }, geoPoint: { type: 'Point', coordinates: [73.8926, 18.5362] }, isActive: true },
+  { _id: 'IN_MH_PUNE_KOTHRUD',          cityId: 'IN_MH_PUNE',   stateId: 'IN_MH', countryId: 'IN', name: 'Kothrud',        aliases: [],                            postalCode: '411038', coordinates: { latitude: 18.5074, longitude: 73.8077 }, geoPoint: { type: 'Point', coordinates: [73.8077, 18.5074] }, isActive: true },
+  /* Mumbai areas */
+  { _id: 'IN_MH_MUMBAI_ANDHERI',        cityId: 'IN_MH_MUMBAI', stateId: 'IN_MH', countryId: 'IN', name: 'Andheri',        aliases: ['Andheri West','Andheri East'],postalCode: '400053', coordinates: { latitude: 19.1136, longitude: 72.8697 }, geoPoint: { type: 'Point', coordinates: [72.8697, 19.1136] }, isActive: true },
+  { _id: 'IN_MH_MUMBAI_THANE',          cityId: 'IN_MH_MUMBAI', stateId: 'IN_MH', countryId: 'IN', name: 'Thane',          aliases: ['Thane City'],                postalCode: '400601', coordinates: { latitude: 19.2183, longitude: 72.9781 }, geoPoint: { type: 'Point', coordinates: [72.9781, 19.2183] }, isActive: true },
+];
 
 /* ── Seed data ── */
 const CATEGORIES_DATA = [
@@ -132,6 +219,50 @@ async function seed() {
   await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
   console.log('✅ Connected');
 
+  /* ══════════════════════════════════════════
+     GEO HIERARCHY
+  ══════════════════════════════════════════ */
+  console.log('\n🌏 Seeding geo hierarchy…');
+
+  for (const c of GEO_COUNTRIES) {
+    await GeoCountry.findOneAndUpdate(
+      { _id: c._id },
+      { $setOnInsert: c },
+      { upsert: true, new: true }
+    );
+  }
+  console.log(`   ✓ ${GEO_COUNTRIES.length} countries`);
+
+  for (const s of GEO_STATES) {
+    await GeoState.findOneAndUpdate(
+      { _id: s._id },
+      { $setOnInsert: s },
+      { upsert: true, new: true }
+    );
+  }
+  console.log(`   ✓ ${GEO_STATES.length} states`);
+
+  for (const c of GEO_CITIES) {
+    await GeoCity.findOneAndUpdate(
+      { _id: c._id },
+      { $setOnInsert: c },
+      { upsert: true, new: true }
+    );
+  }
+  console.log(`   ✓ ${GEO_CITIES.length} cities`);
+
+  for (const a of GEO_AREAS) {
+    await GeoArea.findOneAndUpdate(
+      { _id: a._id },
+      { $setOnInsert: a },
+      { upsert: true, new: true }
+    );
+  }
+  console.log(`   ✓ ${GEO_AREAS.length} areas`);
+
+  /* ── Ensure 2dsphere index is created before $near queries ── */
+  await GeoArea.ensureIndexes();
+
   /* ── Categories ── */
   console.log('\n📂 Seeding categories…');
   const catMap = {};
@@ -231,6 +362,61 @@ async function seed() {
     console.log(`   ✓ ${pd.name} (${serviceIds.length} services)`);
   }
 
+  /* ── Backfill Provider geo IDs for the seeded providers ── */
+  console.log('\n📍 Backfilling provider geo IDs and service areas…');
+  const indoreProvider = await Provider.findOne({ 'location.city': 'Indore' }).limit(1);
+  if (indoreProvider) {
+    /* Update all Indore-based providers with normalized geo IDs */
+    await Provider.updateMany(
+      { 'location.city': 'Indore' },
+      {
+        $set: {
+          'location.cityId':    'IN_MP_INDORE',
+          'location.stateId':   'IN_MP',
+          'location.countryId': 'IN',
+        },
+      }
+    );
+
+    /* Seed ProviderServiceArea records for each seeded provider */
+    const providers = await Provider.find({ 'location.city': 'Indore' });
+    for (const prov of providers) {
+      /* City-wide coverage for Indore */
+      await ProviderServiceArea.findOneAndUpdate(
+        { providerId: prov._id, locationId: 'IN_MP_INDORE', locationType: 'CITY' },
+        {
+          $setOnInsert: {
+            providerId:  prov._id,
+            locationType:'CITY',
+            locationId:  'IN_MP_INDORE',
+            label:       'Indore City',
+            travelCharge:{ model: 'FREE' },
+            isActive:    true,
+          },
+        },
+        { upsert: true, new: true }
+      );
+
+      /* 30 km radius from city centre */
+      await ProviderServiceArea.findOneAndUpdate(
+        { providerId: prov._id, locationType: 'RADIUS' },
+        {
+          $setOnInsert: {
+            providerId:   prov._id,
+            locationType: 'RADIUS',
+            radiusKm:     30,
+            centerPoint:  { type: 'Point', coordinates: [75.8577, 22.7196] },
+            label:        '30 km radius from Indore',
+            travelCharge: { model: 'PER_KM', perKmAmount: 10, freeUpToKm: 10 },
+            isActive:     true,
+          },
+        },
+        { upsert: true, new: true }
+      );
+    }
+    console.log(`   ✓ ${providers.length} providers updated with geo IDs and service areas`);
+  }
+
   /* ── Admin user ── */
   console.log('\n🔑 Creating admin user…');
   let admin = await User.findOne({ 'contact.email': 'admin@panditji.dev' }).select('+passwordHash');
@@ -249,19 +435,23 @@ async function seed() {
   }
 
   /* ── Summary ── */
-  const [cats, svcs, provs, users] = await Promise.all([
+  const [cats, svcs, provs, users, areas, gCities] = await Promise.all([
     Category.countDocuments(),
     Service.countDocuments(),
     Provider.countDocuments(),
     User.countDocuments(),
+    GeoArea.countDocuments(),
+    GeoCity.countDocuments(),
   ]);
   console.log(`\n✅ Seed complete!`);
   console.log(`   Categories: ${cats}`);
   console.log(`   Services:   ${svcs}`);
   console.log(`   Providers:  ${provs}`);
   console.log(`   Users:      ${users}`);
-  console.log('\n   Admin login: admin@panditji.dev / Admin@123!');
-  console.log('   Test login:  rajesh.sharma@panditji.dev / Password123!');
+  console.log(`   Geo Cities: ${gCities}`);
+  console.log(`   Geo Areas:  ${areas}`);
+  console.log('\n   Admin login:    admin@panditji.dev  / Admin@123!');
+  console.log('   Provider login: rajesh.sharma@panditji.dev / Password123!');
 
   await mongoose.disconnect();
   process.exit(0);

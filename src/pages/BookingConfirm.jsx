@@ -7,6 +7,7 @@ import { providersApi, bookingsApi, paymentsApi, servicesApi } from '../api/inde
 import { useAuth } from '../context/AuthContext.jsx';
 import AuthModal from '../components/AuthModal.jsx';
 import { PANDITS as STATIC_PANDITS } from '../data/services';
+import { useLocation as useGeoLocation } from '../context/LocationContext.jsx';
 
 const PAYMENT_METHODS = [
   { id: 'UPI',         label: 'UPI',         icon: '📱' },
@@ -19,6 +20,7 @@ export default function BookingConfirm() {
   const navigate     = useNavigate();
   const { state }    = useLocation();
   const { user }     = useAuth();
+  const { getLocationForRequest, selectedLocation } = useGeoLocation();
 
   const req = state?.req || null;
 
@@ -99,6 +101,26 @@ export default function BookingConfirm() {
         { itemType: 'PLATFORM_FEE', label: 'Platform fee',         quantity: 1, unitPrice: priceBreakdown.platform, totalPrice: priceBreakdown.platform },
       ].filter(i => i.totalPrice > 0);
 
+      /* Build geo-aware event location:
+         Priority: address typed by user (most specific) → selectedLocation from context → empty */
+      const geoLoc = getLocationForRequest();
+      const eventLocation = {
+        addressLine1: form.address || undefined,
+        city:    geoLoc?.formattedAddress
+          ? (selectedLocation?.city?.name || '')
+          : '',
+        state:   selectedLocation?.state?.name  || '',
+        country: selectedLocation?.country?.id  || 'IN',
+        /* Store normalized geo IDs for matching / reporting */
+        cityId:    geoLoc?.cityId    || undefined,
+        stateId:   geoLoc?.stateId   || undefined,
+        countryId: geoLoc?.countryId || undefined,
+        geo: geoLoc?.coordinates ? {
+          type:        'Point',
+          coordinates: [geoLoc.coordinates.longitude, geoLoc.coordinates.latitude],
+        } : undefined,
+      };
+
       const { booking } = await bookingsApi.create({
         primaryProviderId:   pandit._id || pandit.id,
         serviceId:           req?.serviceId || (pandit.serviceIds?.[0]?._id || pandit.serviceIds?.[0]),
@@ -107,7 +129,7 @@ export default function BookingConfirm() {
         event: {
           date:      req?.date !== '—' ? req?.date : undefined,
           startTime: req?.time !== '—' ? req?.time : undefined,
-          location:  { addressLine1: form.address, city: '', country: 'IN' },
+          location:  eventLocation,
         },
         customerDetails: { name: form.name, phone: form.phone, address: form.address, notes: form.notes },
         requirementsSnapshot: req || {},

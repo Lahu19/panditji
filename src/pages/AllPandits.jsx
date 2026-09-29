@@ -5,6 +5,7 @@ import { ArrowLeft, SlidersHorizontal, X } from 'lucide-react';
 import MandalaDecor, { RangoliDivider } from '../components/MandalaDecor';
 import { providersApi } from '../api/index.js';
 import { PANDITS as STATIC_PANDITS } from '../data/services';
+import { useLocation as useGeoLocation } from '../context/LocationContext.jsx';
 
 const LANGUAGE_OPTS = ['Hindi', 'Marathi', 'Sanskrit', 'English'];
 const RATING_OPTS   = [{ label: '4.9+', min: 4.9 }, { label: '4.7+', min: 4.7 }, { label: '4.5+', min: 4.5 }];
@@ -46,6 +47,7 @@ function norm(p) {
 
 export default function AllPandits() {
   const navigate = useNavigate();
+  const { selectedLocation, displayName: locationDisplayName, openSelector } = useGeoLocation();
 
   /* Filter state */
   const [langs,       setLangs]       = useState([]);
@@ -54,6 +56,8 @@ export default function AllPandits() {
   const [samagri,     setSamagri]     = useState(false);
   const [verified,    setVerified]    = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  /* City filter — defaults to selected location city, user can override */
+  const [cityFilter,  setCityFilter]  = useState('');
 
   /* Data state */
   const [providers, setProviders] = useState([]);
@@ -61,6 +65,14 @@ export default function AllPandits() {
   const [page,      setPage]      = useState(1);
   const [loading,   setLoading]   = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
+
+  /* Auto-populate city from location context on first load */
+  useEffect(() => {
+    if (selectedLocation?.city?.name && !cityFilter) {
+      setCityFilter(selectedLocation.city.name);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLocation]);
 
   const fetchProviders = useCallback(async () => {
     setLoading(true);
@@ -71,6 +83,8 @@ export default function AllPandits() {
     if (ratingMin)     params.ratingMin = ratingMin;
     if (priceOpt?.max) params.priceMax  = priceOpt.max;
     if (priceOpt?.min) params.priceMin  = priceOpt.min;
+    /* City filter — passed as a query param; server does case-insensitive regex */
+    if (cityFilter.trim()) params.city = cityFilter.trim();
 
     try {
       const data = await providersApi.list(params);
@@ -98,13 +112,13 @@ export default function AllPandits() {
     } finally {
       setLoading(false);
     }
-  }, [langs, ratingMin, priceOpt, samagri, verified, page]);
+  }, [langs, ratingMin, priceOpt, samagri, verified, page, cityFilter]);
 
   useEffect(() => { fetchProviders(); }, [fetchProviders]);
 
   function toggleLang(l) { setLangs(prev => prev.includes(l) ? prev.filter(x => x !== l) : [...prev, l]); }
-  function clearAll() { setLangs([]); setRatingMin(null); setPriceOpt(null); setSamagri(false); setVerified(false); setPage(1); }
-  const activeCount = langs.length + (ratingMin ? 1 : 0) + (priceOpt ? 1 : 0) + (samagri ? 1 : 0) + (verified ? 1 : 0);
+  function clearAll() { setLangs([]); setRatingMin(null); setPriceOpt(null); setSamagri(false); setVerified(false); setCityFilter(''); setPage(1); }
+  const activeCount = langs.length + (ratingMin ? 1 : 0) + (priceOpt ? 1 : 0) + (samagri ? 1 : 0) + (verified ? 1 : 0) + (cityFilter ? 1 : 0);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--cream)', position: 'relative' }}>
@@ -129,6 +143,17 @@ export default function AllPandits() {
         {/* Filter bar */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+            {/* Location chip — shows current city, click to change */}
+            <button
+              onClick={openSelector}
+              style={{ padding: '7px 16px', borderRadius: 50, border: cityFilter ? 'none' : '1.5px solid var(--border-gold)', background: cityFilter ? 'var(--saffron)' : 'white', color: cityFilter ? 'white' : 'var(--text-mid)', fontFamily: 'var(--font-ui)', fontSize: '0.78rem', fontWeight: cityFilter ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              📍 {cityFilter || 'All Cities'}
+              {cityFilter && (
+                <span onClick={e => { e.stopPropagation(); setCityFilter(''); setPage(1); }}
+                  style={{ marginLeft: 4, opacity: 0.7, lineHeight: 1 }}>✕</span>
+              )}
+            </button>
             {LANGUAGE_OPTS.map(l => <Chip key={l} label={`🗣 ${l}`} active={langs.includes(l)} onClick={() => toggleLang(l)} />)}
             <Chip label="🧺 Samagri" active={samagri} onClick={() => setSamagri(s => !s)} color="var(--gold-dark)" />
             <Chip label="✓ Verified" active={verified} onClick={() => setVerified(v => !v)} color="#2e7d32" />

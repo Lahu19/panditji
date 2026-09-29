@@ -93,6 +93,11 @@ const providerSchema = new Schema(
       city:    { type: String },
       state:   { type: String },
       country: { type: String, default: 'IN' },
+      /* Normalized geo hierarchy IDs — used by matching engine */
+      cityId:           { type: String },
+      stateId:          { type: String },
+      countryId:        { type: String },
+      formattedAddress: { type: String },
     },
 
     pricing: {
