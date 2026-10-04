@@ -59,9 +59,23 @@ export default function BookingConfirm() {
         const { provider } = await providersApi.get(id);
         setPandit(provider);
       } catch {
-        /* Silently fall back to static data (covers non-ObjectId IDs like 'p1') */
+        /* Non-ObjectId id (e.g. 'p1') — try to find the matching real provider
+           from the DB by searching the static pandit's name, then fall back
+           to the static record only for display (booking will be blocked). */
         const staticP = STATIC_PANDITS.find(p => p.id === id);
-        if (staticP) setPandit(_normStatic(staticP));
+        if (staticP) {
+          try {
+            /* Search DB by display name to get the real ObjectId */
+            const { providers } = await providersApi.search(staticP.name);
+            if (providers?.length > 0) {
+              setPandit(providers[0]);
+            } else {
+              setPandit(_normStatic(staticP));
+            }
+          } catch {
+            setPandit(_normStatic(staticP));
+          }
+        }
       } finally {
         setLoadingP(false);
       }

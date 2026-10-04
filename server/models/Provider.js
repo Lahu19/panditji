@@ -64,7 +64,7 @@ const providerSchema = new Schema(
       default: 'INDIVIDUAL',
     },
 
-    displayName: { type: String, trim: true, required: true },
+    displayName: { type: String, trim: true, default: '' },
 
     profile: {
       about:           { type: String, trim: true },

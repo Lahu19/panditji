@@ -43,12 +43,24 @@ router.use(authRequired, (req, res, next) => {
 async function getOrCreateProvider(userId) {
   let provider = await Provider.findOne({ userId, isDeleted: false });
   if (!provider) {
+    /* Fetch user to derive a sensible displayName fallback */
+    const user = await User.findById(userId).select('profile contact');
+    const fallbackName = [
+      user?.profile?.displayName,
+      user?.profile?.firstName && user?.profile?.lastName
+        ? `${user.profile.firstName} ${user.profile.lastName}`
+        : null,
+      user?.profile?.firstName,
+      user?.contact?.email?.split('@')[0],
+      'New Pandit',
+    ].find(Boolean);
+
     provider = await Provider.create({
       userId,
-      displayName: '',
-      status:     'PENDING_VERIFICATION',
-      createdBy:  userId,
-      modifiedBy: userId,
+      displayName: fallbackName,
+      status:      'PENDING_VERIFICATION',
+      createdBy:   userId,
+      modifiedBy:  userId,
     });
   }
   return provider;
