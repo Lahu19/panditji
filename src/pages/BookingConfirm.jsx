@@ -489,7 +489,7 @@ export default function BookingConfirm() {
                 </div>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <Link to="/" className="btn-secondary" style={{ flex: 1, justifyContent: 'center', textAlign: 'center' }}>🏠 Home</Link>
-                  <Link to={`/pandit/${pandit._id || pandit.id}`} className="btn-primary" style={{ flex: 1, justifyContent: 'center', textAlign: 'center' }}>View Pandit Profile</Link>
+                  <Link to="/my-bookings" className="btn-primary" style={{ flex: 1, justifyContent: 'center', textAlign: 'center' }}>📅 Track Booking</Link>
                 </div>
                 <div style={{ marginTop: 24, textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--text-light)', fontStyle: 'italic' }}>
                   ॐ तत् सत् — May your ceremony be auspicious

@@ -562,6 +562,42 @@ router.patch('/bookings/:id/respond', async (req, res, next) => {
       ip: req.ip, userAgent: req.headers['user-agent'],
     });
 
+    /* ── Notify the customer ── */
+    try {
+      const serviceName = booking.serviceId
+        ? (await require('../models/Service').findById(booking.serviceId).select('name'))?.name || 'your service'
+        : 'your service';
+
+      if (action === 'ACCEPT') {
+        await Notification.create({
+          userId:    booking.customerId,
+          type:      'BOOKING_CONFIRMED',
+          title:     'Booking Confirmed 🙏',
+          body:      `Your booking for ${serviceName} has been confirmed by ${provider.displayName || 'your pandit'}. See you soon!`,
+          refType:   'Booking',
+          refId:     booking._id,
+          channel:   'IN_APP',
+          createdBy: req.user.id,
+          modifiedBy:req.user.id,
+        });
+      } else {
+        await Notification.create({
+          userId:    booking.customerId,
+          type:      'BOOKING_CANCELLED',
+          title:     'Booking Declined',
+          body:      `Unfortunately, ${provider.displayName || 'your pandit'} could not accept your ${serviceName} booking${reason ? ` (${reason})` : ''}. Please search for another available pandit.`,
+          refType:   'Booking',
+          refId:     booking._id,
+          channel:   'IN_APP',
+          createdBy: req.user.id,
+          modifiedBy:req.user.id,
+        });
+      }
+    } catch (notifErr) {
+      /* Non-fatal — log but don't fail the request */
+      console.error('[panditPortal] notification create failed:', notifErr.message);
+    }
+
     res.json({ booking: updated });
   } catch (err) { next(err); }
 });

@@ -95,6 +95,15 @@ export default function Navbar() {
                   {t('nav.myPortal')}
                 </Link>
               )}
+              {/* My Bookings — show for regular customers only */}
+              {user.userType === 'CUSTOMER' && (
+                <Link
+                  to="/my-bookings"
+                  style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: 8, padding: '7px 12px', color: 'var(--gold)', fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  📅 My Bookings
+                </Link>
+              )}
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)' }}>
                 {user.profile?.displayName || user.profile?.firstName || 'Account'}
               </span>
@@ -136,6 +145,9 @@ export default function Navbar() {
             <Link to="/tell-us" onClick={() => setMenuOpen(false)} className="btn-primary" style={{ textAlign: 'center' }}>{t('nav.tellUs')}</Link>
             {user?.userType === 'ADMIN' && (
               <Link to="/admin" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>{t('nav.admin')}</Link>
+            )}
+            {user?.userType === 'CUSTOMER' && (
+              <Link to="/my-bookings" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>📅 My Bookings</Link>
             )}
             <button
               onClick={() => { toggleLang(); setMenuOpen(false); }}

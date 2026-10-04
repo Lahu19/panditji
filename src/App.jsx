@@ -11,6 +11,7 @@ import AllPandits         from './pages/AllPandits';
 import PanditProfile      from './pages/PanditProfile';
 import ServiceDetail      from './pages/ServiceDetail';
 import BookingConfirm     from './pages/BookingConfirm';
+import MyBookings         from './pages/MyBookings';
 
 /* ── Admin ── */
 import AdminLayout    from './pages/admin/AdminLayout';
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/pandit/:id"    element={<PanditProfile />} />
           <Route path="/service/:id"   element={<ServiceDetail />} />
           <Route path="/book/:id"      element={<BookingConfirm />} />
+          <Route path="/my-bookings"   element={<MyBookings />} />
 
           {/* ── Pandit Portal — standalone pages (outside layout) ── */}
           <Route path="/pandit-portal/login"  element={<PanditLogin />} />
