@@ -2,12 +2,15 @@
 const router   = require('express').Router();
 const Booking  = require('../models/Booking');
 const Provider = require('../models/Provider');
+const Service  = require('../models/Service');
 const { authRequired } = require('../middleware/auth');
+
+const isObjectId = (v) => /^[a-f\d]{24}$/i.test(String(v));
 
 /* POST /api/bookings — create booking */
 router.post('/', authRequired, async (req, res, next) => {
   try {
-    const {
+    let {
       serviceId, primaryProviderId, requestId,
       event, customerDetails, pricingSnapshot,
       requirementsSnapshot, panditCount,
@@ -16,12 +19,29 @@ router.post('/', authRequired, async (req, res, next) => {
     if (!serviceId || !primaryProviderId)
       return res.status(400).json({ error: 'serviceId and primaryProviderId are required' });
 
-    /* Validate IDs are proper ObjectIds before touching the DB */
-    const isValidId = (v) => /^[a-f\d]{24}$/i.test(String(v));
-    if (!isValidId(primaryProviderId))
-      return res.status(400).json({ error: 'Invalid provider — please select a verified Pandit from the directory.' });
-    if (!isValidId(serviceId))
-      return res.status(400).json({ error: 'Invalid service — please select a valid service.' });
+    /* ── Resolve serviceId: accept ObjectId OR slug ── */
+    if (!isObjectId(serviceId)) {
+      const svc = await Service.findOne({ slug: serviceId, isActive: true });
+      if (!svc) return res.status(400).json({ error: `Service "${serviceId}" not found. Please select a valid service.` });
+      serviceId = svc._id;
+    }
+
+    /* ── Resolve primaryProviderId: accept ObjectId OR displayName search ── */
+    if (!isObjectId(primaryProviderId)) {
+      /* Try to find by displayName (covers static 'p1','p2' mapped via name search) */
+      const found = await Provider.findOne({
+        status: 'ACTIVE',
+        isDeleted: false,
+        displayName: new RegExp(String(primaryProviderId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+      }).select('_id');
+
+      if (!found) {
+        return res.status(400).json({
+          error: 'Provider not found. Please select a verified Pandit from the directory.',
+        });
+      }
+      primaryProviderId = found._id;
+    }
 
     const provider = await Provider.findById(primaryProviderId);
     if (!provider) return res.status(404).json({ error: 'Provider not found' });
