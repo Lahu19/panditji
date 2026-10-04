@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Menu, X, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLang } from '../context/LangContext.jsx';
 import AuthModal from './AuthModal.jsx';
 import { LocationBadge, LocationSelectorModal } from './LocationSelector.jsx';
 
@@ -10,6 +11,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const { user, logout } = useAuth();
+  const { t, toggleLang } = useLang();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -44,14 +46,35 @@ export default function Navbar() {
           {/* Location badge */}
           <LocationBadge />
 
-          <Link to="/browse"  className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>🛕 Browse</Link>
-          <Link to="/pandits" className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>👤 Pandits</Link>
+          <Link to="/browse"  className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>🛕 {t('nav.browse')}</Link>
+          <Link to="/pandits" className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>👤 {t('nav.pandits')}</Link>
           <Link to="/search"  className="btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 16px' }}>
-            <Search size={14} /> Search
+            <Search size={14} /> {t('nav.search')}
           </Link>
           <Link to="/tell-us" className="btn-primary" style={{ padding: '10px 22px', fontSize: '0.8rem' }}>
-            💬 Tell Us What You Need
+            {t('nav.tellUs')}
           </Link>
+
+          {/* Language toggle */}
+          <button
+            onClick={toggleLang}
+            title="Switch language / भाषा बदला"
+            style={{
+              background: 'rgba(212,175,55,0.12)',
+              border: '1px solid rgba(212,175,55,0.35)',
+              borderRadius: 8,
+              padding: '7px 12px',
+              cursor: 'pointer',
+              color: 'var(--gold)',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              transition: 'background 0.2s',
+            }}
+          >
+            {t('lang.toggle')}
+          </button>
 
           {/* Auth area */}
           {user ? (
@@ -61,7 +84,7 @@ export default function Navbar() {
                   to="/admin"
                   style={{ background: 'rgba(212,175,55,0.18)', border: '1px solid rgba(212,175,55,0.4)', borderRadius: 8, padding: '7px 12px', color: 'var(--gold)', fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
                 >
-                  ⚙️ Admin
+                  {t('nav.admin')}
                 </Link>
               )}
               {user.userType === 'PROVIDER' && (
@@ -69,7 +92,7 @@ export default function Navbar() {
                   to="/pandit-portal"
                   style={{ background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.4)', borderRadius: 8, padding: '7px 12px', color: 'var(--saffron)', fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none' }}
                 >
-                  🙏 My Portal
+                  {t('nav.myPortal')}
                 </Link>
               )}
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)' }}>
@@ -77,7 +100,7 @@ export default function Navbar() {
               </span>
               <button
                 onClick={logout}
-                title="Sign out"
+                title={t('nav.signOut')}
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center' }}
               >
                 <LogOut size={14} />
@@ -88,7 +111,7 @@ export default function Navbar() {
               onClick={() => setShowAuth(true)}
               style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', color: 'var(--gold)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              <User size={14} /> Sign In
+              <User size={14} /> {t('nav.signIn')}
             </button>
           )}
         </div>
@@ -107,20 +130,26 @@ export default function Navbar() {
         {menuOpen && (
           <div style={{ position: 'absolute', top: 64, left: 0, right: 0, background: 'rgba(26,5,5,0.98)', borderBottom: '1px solid rgba(212,175,55,0.2)', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12, zIndex: 99 }}>
             <LocationBadge />
-            <Link to="/browse"  onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>🛕 Browse Services</Link>
-            <Link to="/pandits" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>👤 All Pandits</Link>
-            <Link to="/search"  onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>🔎 Search</Link>
-            <Link to="/tell-us" onClick={() => setMenuOpen(false)} className="btn-primary" style={{ textAlign: 'center' }}>💬 Tell Us What You Need</Link>
+            <Link to="/browse"  onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>🛕 {t('nav.browse')}</Link>
+            <Link to="/pandits" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>👤 {t('nav.pandits')}</Link>
+            <Link to="/search"  onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>🔎 {t('nav.search')}</Link>
+            <Link to="/tell-us" onClick={() => setMenuOpen(false)} className="btn-primary" style={{ textAlign: 'center' }}>{t('nav.tellUs')}</Link>
             {user?.userType === 'ADMIN' && (
-              <Link to="/admin" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>⚙️ Admin Panel</Link>
+              <Link to="/admin" onClick={() => setMenuOpen(false)} style={{ color: 'var(--gold)', fontFamily: 'var(--font-ui)', textDecoration: 'none' }}>{t('nav.admin')}</Link>
             )}
+            <button
+              onClick={() => { toggleLang(); setMenuOpen(false); }}
+              style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: 8, padding: '8px 14px', color: 'var(--gold)', fontFamily: 'var(--font-ui)', fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left', fontWeight: 600 }}
+            >
+              🌐 {t('lang.toggle')}
+            </button>
             {user ? (
               <button onClick={() => { logout(); setMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-ui)', fontSize: '0.88rem', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
-                Sign Out
+                {t('nav.signOut')}
               </button>
             ) : (
               <button onClick={() => { setShowAuth(true); setMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'var(--gold)', fontFamily: 'var(--font-ui)', fontSize: '0.88rem', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
-                Sign In / Register
+                {t('nav.signIn')} / {t('nav.register')}
               </button>
             )}
           </div>

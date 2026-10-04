@@ -80,7 +80,7 @@ router.get('/dashboard', async (req, res, next) => {
         { $sort: { count: -1 } },
         { $limit: 6 },
         { $lookup: { from: 'services', localField: '_id', foreignField: '_id', as: 'service' } },
-        { $unwind: { path: '$service', preserveNullAndEmpty: true } },
+        { $unwind: { path: '$service', preserveNullAndEmptyArrays: true } },
         { $project: { _id: 1, count: 1, name: '$service.name' } },
       ]),
 

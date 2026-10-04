@@ -26,7 +26,7 @@ const paymentSchema = new Schema(
     method: {
       type: String,
       enum: ['UPI', 'CARD', 'NET_BANKING', 'WALLET', 'CASH', 'BANK_TRANSFER', 'PLATFORM_CREDIT'],
-      default: 'UPI',
+      default: 'CASH',
     },
 
     /* Fee breakdown */

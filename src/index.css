@@ -780,7 +780,7 @@ table.admin-table tr:hover td { background: #fdfcf9; }
 
 /* Main content */
 .pp-main { flex: 1; min-width: 0; overflow-y: auto; }
-.pp-content { padding: 28px; max-width: 960px; }
+.pp-content { padding: 28px; width: 100%; box-sizing: border-box; }
 .pp-page-title {
   font-family: var(--font-display); font-size: 1.3rem;
   font-weight: 700; color: var(--text-dark); margin-bottom: 6px;

@@ -9,10 +9,11 @@ import AuthModal from '../components/AuthModal.jsx';
 import { PANDITS as STATIC_PANDITS } from '../data/services';
 import { useLocation as useGeoLocation } from '../context/LocationContext.jsx';
 
+/* Payment methods — only CASH is live; others are "coming soon" */
 const PAYMENT_METHODS = [
-  { id: 'UPI',         label: 'UPI',         icon: '📱' },
-  { id: 'CARD',        label: 'Card',         icon: '💳' },
-  { id: 'NET_BANKING', label: 'Net Banking',  icon: '🏦' },
+  { id: 'CASH', label: 'Cash',  icon: '💵', live: true  },
+  { id: 'UPI',  label: 'UPI',   icon: '📱', live: false },
+  { id: 'CARD', label: 'Card',  icon: '💳', live: false },
 ];
 
 export default function BookingConfirm() {
@@ -29,7 +30,7 @@ export default function BookingConfirm() {
   const [step,        setStep]        = useState(0);
   const [form,        setForm]        = useState({ name: user?.profile?.displayName || '', phone: user?.contact?.phone || '', address: '', notes: '' });
   const [panditCount, setPanditCount] = useState(req?.providerCount || 1);
-  const [payMethod,   setPayMethod]   = useState('UPI');
+  const [payMethod,   setPayMethod]   = useState('CASH');
   const [upiId,       setUpiId]       = useState('');
   const [loading,     setLoading]     = useState(false);
   const [bookingId,   setBookingId]   = useState(null);
@@ -54,10 +55,11 @@ export default function BookingConfirm() {
       setLoadingP(true);
       const isObjectId = /^[a-f\d]{24}$/i.test(id);
       try {
-        if (!isObjectId) throw new Error('not an ObjectId — use static');
+        if (!isObjectId) throw new Error('static');
         const { provider } = await providersApi.get(id);
         setPandit(provider);
       } catch {
+        /* Silently fall back to static data (covers non-ObjectId IDs like 'p1') */
         const staticP = STATIC_PANDITS.find(p => p.id === id);
         if (staticP) setPandit(_normStatic(staticP));
       } finally {
@@ -123,8 +125,7 @@ export default function BookingConfirm() {
 
       const { booking } = await bookingsApi.create({
         primaryProviderId:   pandit._id || pandit.id,
-        serviceId:           req?.serviceId || (pandit.serviceIds?.[0]?._id || pandit.serviceIds?.[0]),
-        requestId:           req?.requestId,
+        serviceId:           req?.serviceId || (pandit.serviceIds?.[0]?._id || pandit.serviceIds?.[0]),        requestId:           req?.requestId,
         panditCount,
         event: {
           date:      req?.date !== '—' ? req?.date : undefined,
@@ -174,7 +175,13 @@ export default function BookingConfirm() {
       setBookingRef('PJ-' + booking._id.toString().slice(-6).toUpperCase());
       setStep(2);
     } catch (err) {
-      setError(err.message || 'Booking failed. Please try again.');
+      /* Sanitise error message — never show raw Mongoose CastError to user */
+      const raw = err.message || '';
+      const isCastErr = raw.toLowerCase().includes('cast') || raw.toLowerCase().includes('objectid');
+      setError(isCastErr
+        ? 'We could not complete your booking. Please try again or contact support.'
+        : (raw || 'Booking failed. Please try again.')
+      );
     } finally {
       setLoading(false);
     }
@@ -327,21 +334,63 @@ export default function BookingConfirm() {
               </div>
 
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: 14 }}>Payment Method</h2>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+
+              {/* Payment method cards */}
+              <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                 {PAYMENT_METHODS.map(m => (
-                  <button key={m.id} onClick={() => setPayMethod(m.id)}
-                    style={{ flex: 1, padding: '12px 8px', background: payMethod === m.id ? 'var(--saffron-pale)' : 'white', border: payMethod === m.id ? '2px solid var(--saffron)' : '1.5px solid var(--border-gold)', borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: payMethod === m.id ? 'var(--saffron)' : 'var(--text-dark)', fontWeight: payMethod === m.id ? 600 : 400, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: '1.2rem' }}>{m.icon}</span>{m.label}
-                  </button>
+                  <div key={m.id} style={{ flex: 1, position: 'relative' }}>
+                    <button
+                      onClick={() => m.live && setPayMethod(m.id)}
+                      disabled={!m.live}
+                      style={{
+                        width: '100%',
+                        padding: '14px 8px',
+                        background: !m.live
+                          ? 'rgba(0,0,0,0.03)'
+                          : payMethod === m.id ? 'rgba(255,107,0,0.08)' : 'white',
+                        border: !m.live
+                          ? '1.5px dashed rgba(0,0,0,0.15)'
+                          : payMethod === m.id ? '2px solid var(--saffron)' : '1.5px solid var(--border-gold)',
+                        borderRadius: 10,
+                        cursor: m.live ? 'pointer' : 'not-allowed',
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: '0.8rem',
+                        color: !m.live ? 'rgba(0,0,0,0.3)' : payMethod === m.id ? 'var(--saffron)' : 'var(--text-dark)',
+                        fontWeight: payMethod === m.id ? 600 : 400,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <span style={{ fontSize: '1.3rem', opacity: m.live ? 1 : 0.3 }}>{m.icon}</span>
+                      <span>{m.label}</span>
+                      {!m.live && (
+                        <span style={{
+                          fontSize: '0.62rem', letterSpacing: '0.04em', fontWeight: 600,
+                          background: 'rgba(212,175,55,0.15)', color: 'var(--gold)',
+                          border: '1px solid rgba(212,175,55,0.3)',
+                          borderRadius: 4, padding: '1px 5px', marginTop: 2,
+                        }}>
+                          Soon
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 ))}
               </div>
 
-              {payMethod === 'UPI' && (
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-mid)', marginBottom: 6 }}>UPI ID</label>
-                  <input className="input-field" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@upi" />
+              {/* Cash info box */}
+              {payMethod === 'CASH' && (
+                <div style={{ background: 'rgba(46,125,50,0.06)', border: '1px solid rgba(46,125,50,0.2)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontFamily: 'var(--font-ui)', fontSize: '0.83rem', color: '#2e7d32', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>💵</span>
+                  <span>Pay directly to the Pandit on the day of the ceremony. No advance payment required — just show up and enjoy the ritual.</span>
                 </div>
               )}
+
+              {/* Coming soon notice when a non-live method would otherwise be chosen */}
+              <div style={{ background: 'rgba(212,175,55,0.07)', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontFamily: 'var(--font-ui)', fontSize: '0.82rem', color: 'var(--text-mid)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0 }}>🚀</span>
+                <span>UPI and Card payments are coming very soon! For now, Cash is the simplest and most trusted way to pay your Pandit directly.</span>
+              </div>
 
               {error && (
                 <div style={{ background: 'rgba(204,35,30,0.08)', border: '1px solid rgba(204,35,30,0.25)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontFamily: 'var(--font-ui)', fontSize: '0.82rem', color: '#cc231e' }}>
@@ -360,8 +409,7 @@ export default function BookingConfirm() {
                     <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin-slow 0.8s linear infinite', display: 'inline-block' }} />
                     Processing…
                   </span>
-                ) : `Pay ₹${grandTotal.toLocaleString()} & Confirm`}
-              </button>
+                ) : `Pay ₹${grandTotal.toLocaleString()} & Confirm`}              </button>
             </motion.div>
           )}
 

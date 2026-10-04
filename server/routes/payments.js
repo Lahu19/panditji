@@ -28,7 +28,7 @@ router.post('/', authRequired, async (req, res, next) => {
       providerId: booking.primaryProviderId,
       amount:     total,
       currency:   booking.pricingSnapshot?.currency || 'INR',
-      method:     method || 'UPI',
+      method:     method || 'CASH',
       breakdown:  breakdown || {
         panditFee:   booking.pricingSnapshot?.items?.find(i => i.itemType === 'PANDIT_FEE')?.totalPrice || 0,
         samagri:     booking.pricingSnapshot?.items?.find(i => i.itemType === 'SAMAGRI')?.totalPrice    || 0,
