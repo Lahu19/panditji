@@ -92,6 +92,15 @@ export default function BookingConfirm() {
 
   async function handleConfirmPayment() {
     if (!user) { setShowAuth(true); return; }
+
+    /* Block bookings for static/demo pandits that have no real DB ObjectId */
+    const realId = pandit._id;
+    const isRealObjectId = realId && /^[a-f\d]{24}$/i.test(String(realId));
+    if (!isRealObjectId) {
+      setError('This Pandit profile is a sample listing. Please browse and book a verified Pandit from the directory.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {

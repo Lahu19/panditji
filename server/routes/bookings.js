@@ -16,6 +16,13 @@ router.post('/', authRequired, async (req, res, next) => {
     if (!serviceId || !primaryProviderId)
       return res.status(400).json({ error: 'serviceId and primaryProviderId are required' });
 
+    /* Validate IDs are proper ObjectIds before touching the DB */
+    const isValidId = (v) => /^[a-f\d]{24}$/i.test(String(v));
+    if (!isValidId(primaryProviderId))
+      return res.status(400).json({ error: 'Invalid provider — please select a verified Pandit from the directory.' });
+    if (!isValidId(serviceId))
+      return res.status(400).json({ error: 'Invalid service — please select a valid service.' });
+
     const provider = await Provider.findById(primaryProviderId);
     if (!provider) return res.status(404).json({ error: 'Provider not found' });
 
