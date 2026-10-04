@@ -46,6 +46,20 @@ router.post('/', authRequired, async (req, res, next) => {
     const provider = await Provider.findById(primaryProviderId);
     if (!provider) return res.status(404).json({ error: 'Provider not found' });
 
+    /* ── Sanitize event.date — must be a real Date, not free text ──
+       Accept: ISO strings, JS Date-parseable strings.
+       Reject / clear: "This Sunday", "—", empty, unparseable strings.  */
+    const sanitizedEvent = { ...(event || {}) };
+    if (sanitizedEvent.date) {
+      const parsed = new Date(sanitizedEvent.date);
+      if (isNaN(parsed.getTime())) {
+        /* Free-text date like "This Sunday" — store as null, keep in requirementsSnapshot */
+        sanitizedEvent.date = undefined;
+      } else {
+        sanitizedEvent.date = parsed;
+      }
+    }
+
     /* Build providers array (primary + any extras) */
     const count     = Math.max(1, parseInt(panditCount) || 1);
     const providers = [{ providerId: primaryProviderId, role: 'PRIMARY', status: 'PENDING' }];
@@ -56,7 +70,7 @@ router.post('/', authRequired, async (req, res, next) => {
       requestId,
       primaryProviderId,
       providers,
-      event,
+      event:             sanitizedEvent,
       customerDetails,
       requirementsSnapshot: requirementsSnapshot || {},
       pricingSnapshot: {

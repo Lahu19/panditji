@@ -148,10 +148,20 @@ export default function BookingConfirm() {
 
       const { booking } = await bookingsApi.create({
         primaryProviderId:   pandit._id || pandit.id,
-        serviceId:           req?.serviceId || (pandit.serviceIds?.[0]?._id || pandit.serviceIds?.[0]),        requestId:           req?.requestId,
+        /* Resolve serviceId: prefer real ObjectId from pandit.serviceIds, fall back to slug */
+        serviceId:           req?.serviceId && /^[a-f\d]{24}$/i.test(req.serviceId)
+                               ? req.serviceId
+                               : (pandit.serviceIds?.[0]?._id || pandit.serviceIds?.[0] || req?.serviceId),
+        requestId:           req?.requestId,
         panditCount,
         event: {
-          date:      req?.date !== '—' ? req?.date : undefined,
+          /* Only send date if it's a parseable date — strip free-text like "This Sunday" */
+          date:      (() => {
+            const raw = req?.date;
+            if (!raw || raw === '—') return undefined;
+            const d = new Date(raw);
+            return isNaN(d.getTime()) ? undefined : d.toISOString();
+          })(),
           startTime: req?.time !== '—' ? req?.time : undefined,
           location:  eventLocation,
         },
